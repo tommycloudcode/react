@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import '../styles/MacWindow.css';
 
 export default function MacWindow({ title = 'Application', children }) {
