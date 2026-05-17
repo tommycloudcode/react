@@ -13,8 +13,11 @@ export default function MacWindow({
   const [isMinimized, setIsMinimized] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
   const [position, setPosition] = useState(initialPosition);
+  const [size, setSize] = useState({ width: 600, height: 400 });
   const dragOffset = useRef({ x: 0, y: 0 });
+  const resizeRef = useRef({ startX: 0, startY: 0, startW: 600, startH: 400 });
   const windowRef = useRef(null);
 
   useEffect(() => {
@@ -49,6 +52,43 @@ export default function MacWindow({
     setIsDragging(true);
   };
 
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const MIN_WIDTH = 320;
+    const MIN_HEIGHT = 220;
+
+    const handleMouseMove = (e) => {
+      if (isMaximized) return;
+      setSize({
+        width: Math.max(MIN_WIDTH, resizeRef.current.startW + (e.clientX - resizeRef.current.startX)),
+        height: Math.max(MIN_HEIGHT, resizeRef.current.startH + (e.clientY - resizeRef.current.startY)),
+      });
+    };
+
+    const handleMouseUp = () => setIsResizing(false);
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, isMaximized]);
+
+  const handleResizeMouseDown = (e) => {
+    e.stopPropagation();
+    if (isMaximized) return;
+    resizeRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startW: size.width,
+      startH: size.height,
+    };
+    setIsResizing(true);
+  };
+
   const handleClose = () => {
     setIsClosing(true);
     setTimeout(() => onClose?.(), 280);
@@ -62,7 +102,7 @@ export default function MacWindow({
 
   const windowStyle = isMaximized
     ? { left: 0, top: 0, width: '100%', height: '100%', zIndex }
-    : { left: position.x, top: position.y, zIndex };
+    : { left: position.x, top: position.y, width: size.width, height: size.height, zIndex };
 
   return (
     <div
@@ -72,6 +112,7 @@ export default function MacWindow({
         isMaximized && 'maximized',
         isMinimized && 'minimized',
         isDragging && 'dragging',
+        isResizing && 'resizing',
         isClosing && 'closing',
       ]
         .filter(Boolean)
@@ -91,7 +132,12 @@ export default function MacWindow({
         <div className="titlebar-title">{title}</div>
         <div className="titlebar-spacer" />
       </div>
-      {!isMinimized && <div className="window-content">{children}</div>}
-    </div>
+      {!isMinimized && <div className="window-content">{children}</div>}      {!isMaximized && !isMinimized && (
+        <div
+          className="resize-handle"
+          onMouseDown={handleResizeMouseDown}
+          title="Resize"
+        />
+      )}    </div>
   );
 }

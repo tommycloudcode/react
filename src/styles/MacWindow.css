@@ -10,8 +10,11 @@
   overflow: hidden;
   width: 600px;
   height: 400px;
-  transition: height 0.25s ease, box-shadow 0.2s ease;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition:
+    height 0.25s ease,
+    box-shadow 0.2s ease;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   position: absolute;
 }
 
@@ -41,8 +44,14 @@
 }
 
 @keyframes closeWindow {
-  0% { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(0.93); }
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.93);
+  }
 }
 
 .window-titlebar {
@@ -82,9 +91,15 @@
   filter: brightness(0.85);
 }
 
-.traffic-light.red   { background: #ff5f56; }
-.traffic-light.yellow { background: #ffbd2e; }
-.traffic-light.green  { background: #27c93f; }
+.traffic-light.red {
+  background: #ff5f56;
+}
+.traffic-light.yellow {
+  background: #ffbd2e;
+}
+.traffic-light.green {
+  background: #27c93f;
+}
 
 .titlebar-title {
   flex: 1;
@@ -110,7 +125,33 @@
   background: #fff;
 }
 
-.window-content::-webkit-scrollbar { width: 12px; height: 12px; }
-.window-content::-webkit-scrollbar-track { background: transparent; }
-.window-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 6px; }
-.window-content::-webkit-scrollbar-thumb:hover { background: #999; }
+.resize-handle {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  right: 8px;
+  bottom: 8px;
+  border-radius: 4px;
+  cursor: se-resize;
+  background: rgba(0, 0, 0, 0.12);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.mac-window.resizing {
+  cursor: se-resize;
+}
+
+.window-content::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+.window-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.window-content::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 6px;
+}
+.window-content::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}

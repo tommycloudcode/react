@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import MenuBar from './components/MenuBar'
 import MacWindow from './components/MacWindow'
-import MacButton from './components/MacButton'
 import './App.css'
 
 const WINDOW_W = 600
@@ -20,52 +19,86 @@ function getInitialPosition(index) {
 }
 
 function AppContent() {
-  const [count, setCount] = useState(0)
-  const [message, setMessage] = useState('Welcome to macOS App!')
+  const [expression, setExpression] = useState('')
+  const [output, setOutput] = useState('0')
+  const [error, setError] = useState('')
+
+  const buttons = [
+    'C', '←', '/', '*',
+    '7', '8', '9', '-',
+    '4', '5', '6', '+',
+    '1', '2', '3', '=',
+    '0', '.',
+  ]
+
+  const evaluateExpression = (expr) => {
+    try {
+      const value = Function(`"use strict";return (${expr})`)()
+      if (value === Infinity || value === -Infinity || Number.isNaN(value)) {
+        throw new Error('Invalid result')
+      }
+      return String(value)
+    } catch {
+      return 'Error'
+    }
+  }
+
+  const handleButtonClick = (button) => {
+    if (button === 'C') {
+      setExpression('')
+      setOutput('0')
+      setError('')
+      return
+    }
+
+    if (button === '←') {
+      setExpression((prev) => prev.slice(0, -1))
+      setError('')
+      return
+    }
+
+    if (button === '=') {
+      if (!expression.trim()) {
+        return
+      }
+      const result = evaluateExpression(expression)
+      if (result === 'Error') {
+        setError('Invalid expression')
+      } else {
+        setExpression(result)
+        setOutput(result)
+        setError('')
+      }
+      return
+    }
+
+    setExpression((prev) => prev + button)
+    setError('')
+  }
 
   return (
     <div className="app-content">
-      <h1>Welcome to macOS App</h1>
-      <p className="subtitle">Built with React + Vite</p>
+      <h1>Simple Calculator</h1>
+      <p className="subtitle">Click buttons or build an expression</p>
 
-      <div className="card">
-        <h2>Counter Demo</h2>
-        <div className="counter-display">
-          <span className="counter-value">{count}</span>
+      <div className="calculator-card">
+        <div className="calculator-display">
+          <div className="calculator-expression">{expression || '0'}</div>
+          <div className="calculator-output">{error || output}</div>
         </div>
-        <p className="status-message">{message}</p>
-      </div>
 
-      <div className="button-group">
-        <MacButton
-          variant="primary"
-          onClick={() => { setCount(c => c + 1); setMessage('Button clicked!') }}
-        >
-          Increment Count
-        </MacButton>
-        <MacButton
-          variant="secondary"
-          onClick={() => setMessage('Secondary action performed')}
-        >
-          Secondary Action
-        </MacButton>
-        <MacButton
-          variant="danger"
-          onClick={() => { setCount(0); setMessage('Count reset!') }}
-        >
-          Reset
-        </MacButton>
-      </div>
-
-      <div className="info-section">
-        <h3>Features</h3>
-        <ul>
-          <li>macOS-style window with traffic lights</li>
-          <li>Menu bar at the top</li>
-          <li>Native-looking buttons</li>
-          <li>Double-click desktop icon to open new instance</li>
-          <li>Multiple simultaneous windows supported</li>
-        </ul>
+        <div className="calculator-grid">
+          {buttons.map((button) => (
+            <button
+              key={button}
+              className={`calc-button ${button === '=' ? 'equals' : ''} ${button === 'C' ? 'clear' : ''}`}
+              onClick={() => handleButtonClick(button)}
+              type="button"
+            >
+              {button}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
