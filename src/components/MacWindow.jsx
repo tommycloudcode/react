@@ -6,6 +6,7 @@ export default function MacWindow({
   children,
   onClose,
   onFocus,
+  isActive = false,
   initialPosition = { x: 100, y: 100 },
   initialSize = { width: 600, height: 400 },
   zIndex = 10,
@@ -49,10 +50,19 @@ export default function MacWindow({
     return () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
   }, [isResizing, isMaximized]);
 
-  const handleWindowMouseDown = () => onFocus?.();
+  const handleWindowMouseDown = (e) => {
+    e.stopPropagation();
+    onFocus?.();
+  };
+
+  const handleContentMouseDown = (e) => {
+    e.stopPropagation();
+    onFocus?.();
+  };
 
   const handleTitlebarMouseDown = (e) => {
     if (isMaximized) return;
+    onFocus?.();
     dragOffset.current = { x: e.clientX - position.x, y: e.clientY - position.y };
     setIsDragging(true);
   };
@@ -75,7 +85,7 @@ export default function MacWindow({
   return (
     <div
       ref={windowRef}
-      className={['mac-window', isMaximized && 'maximized', isMinimized && 'minimized',
+      className={['mac-window', isActive && 'active', isMaximized && 'maximized', isMinimized && 'minimized',
         isDragging && 'dragging', isResizing && 'resizing', isClosing && 'closing']
         .filter(Boolean).join(' ')}
       style={windowStyle}
@@ -90,7 +100,7 @@ export default function MacWindow({
         <div className="titlebar-title">{title}</div>
         <div className="titlebar-spacer" />
       </div>
-      {!isMinimized && <div className="window-content">{children}</div>}
+      {!isMinimized && <div className="window-content" onMouseDown={handleContentMouseDown}>{children}</div>}
       {!isMaximized && !isMinimized && (
         <div className="resize-handle" onMouseDown={handleResizeMouseDown} title="Resize" />
       )}

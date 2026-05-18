@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 import MenuBar from './components/MenuBar'
 import MacWindow from './components/MacWindow'
 import Taskbar from './components/Taskbar'
@@ -49,12 +49,23 @@ export default function App() {
 
   const activeWin = windows.find(w => w.instanceId === activeWindowId)
   const activeAppDef = activeWin ? APPS.find(a => a.id === activeWin.appId) : null
-  const currentMenus = activeAppDef
-    ? activeAppDef.getMenus({
-        newInstance: () => openWindow(activeWin.appId),
-        closeWindow: () => closeWindow(activeWin.instanceId),
-      })
-    : DESKTOP_MENUS
+  
+  const menusCallbacks = useMemo(() => {
+    if (!activeWin || !activeAppDef) return null
+    return {
+      newInstance: () => openWindow(activeWin.appId),
+      closeWindow: () => closeWindow(activeWin.instanceId),
+    }
+  }, [activeWin, activeAppDef, openWindow, closeWindow])
+  
+  /* eslint-disable react-hooks/refs */
+  const currentMenus = useMemo(() => {
+    if (activeAppDef && menusCallbacks) {
+      return activeAppDef.getMenus(menusCallbacks)
+    }
+    return DESKTOP_MENUS
+  }, [activeAppDef, menusCallbacks])
+  /* eslint-enable react-hooks/refs */
 
   return (
     <div className="app-container">
@@ -64,6 +75,7 @@ export default function App() {
           const appDef = APPS.find(a => a.id === win.appId)
           if (!appDef) return null
           const AppComponent = appDef.component
+          const isActive = win.instanceId === activeWindowId
           return (
             <MacWindow
               key={win.instanceId}
@@ -71,6 +83,7 @@ export default function App() {
               initialPosition={win.position}
               initialSize={appDef.defaultSize}
               zIndex={win.zIndex}
+              isActive={isActive}
               onClose={() => closeWindow(win.instanceId)}
               onFocus={() => focusWindow(win.instanceId)}
             >

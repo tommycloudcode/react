@@ -4,6 +4,7 @@ import '../styles/MenuBar.css';
 export default function MenuBar({ appName = 'Desktop', menus = {} }) {
   const [openMenu, setOpenMenu] = useState(null);
   const menuRef = useRef(null);
+  const prevAppName = useRef(appName);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -14,7 +15,12 @@ export default function MenuBar({ appName = 'Desktop', menus = {} }) {
   }, []);
 
   // Close dropdown when active app changes
-  useEffect(() => { setOpenMenu(null) }, [appName]);
+  useEffect(() => {
+    if (prevAppName.current !== appName) {
+      setOpenMenu(null);
+      prevAppName.current = appName;
+    }
+  }, [appName]);
 
   const toggle = (name) => setOpenMenu(prev => (prev === name ? null : name));
 

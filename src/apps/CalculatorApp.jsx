@@ -11,7 +11,6 @@ const BUTTONS = [
 
 function evaluate(expr) {
   try {
-    // eslint-disable-next-line no-new-func
     const value = Function(`"use strict";return (${expr})`)()
     if (value === Infinity || value === -Infinity || Number.isNaN(value)) throw new Error()
     return String(value)
