@@ -34,6 +34,16 @@
   position: relative;
 }
 
+.menu-app-name {
+  font-weight: 700;
+  color: #000;
+  margin-right: 4px;
+  letter-spacing: -0.2px;
+  user-select: none;
+  -webkit-user-select: none;
+  font-size: 13px;
+}
+
 .menu-item {
   color: #333;
   cursor: pointer;

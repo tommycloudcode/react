@@ -1,153 +1,104 @@
 import { useState, useCallback, useRef } from 'react'
 import MenuBar from './components/MenuBar'
 import MacWindow from './components/MacWindow'
+import Taskbar from './components/Taskbar'
+import { APPS, DESKTOP_MENUS } from './apps/registry'
 import './App.css'
 
-const WINDOW_W = 600
-const WINDOW_H = 400
 const MENU_H = 22
+const TASKBAR_H = 44
 
 let idCounter = 0
 
-function getInitialPosition(index) {
+function getInitialPosition(index, { width, height }) {
   const desktopW = window.innerWidth
-  const desktopH = window.innerHeight - MENU_H
-  const baseX = Math.max(20, (desktopW - WINDOW_W) / 2)
-  const baseY = Math.max(20, (desktopH - WINDOW_H) / 2)
+  const desktopH = window.innerHeight - MENU_H - TASKBAR_H
   const stagger = (index % 8) * 30
-  return { x: baseX + stagger, y: baseY + stagger }
-}
-
-function AppContent() {
-  const [expression, setExpression] = useState('')
-  const [output, setOutput] = useState('0')
-  const [error, setError] = useState('')
-
-  const buttons = [
-    'C', '←', '/', '*',
-    '7', '8', '9', '-',
-    '4', '5', '6', '+',
-    '1', '2', '3', '=',
-    '0', '.',
-  ]
-
-  const evaluateExpression = (expr) => {
-    try {
-      const value = Function(`"use strict";return (${expr})`)()
-      if (value === Infinity || value === -Infinity || Number.isNaN(value)) {
-        throw new Error('Invalid result')
-      }
-      return String(value)
-    } catch {
-      return 'Error'
-    }
+  return {
+    x: Math.max(20, (desktopW - width) / 2) + stagger,
+    y: Math.max(20, (desktopH - height) / 2) + stagger,
   }
-
-  const handleButtonClick = (button) => {
-    if (button === 'C') {
-      setExpression('')
-      setOutput('0')
-      setError('')
-      return
-    }
-
-    if (button === '←') {
-      setExpression((prev) => prev.slice(0, -1))
-      setError('')
-      return
-    }
-
-    if (button === '=') {
-      if (!expression.trim()) {
-        return
-      }
-      const result = evaluateExpression(expression)
-      if (result === 'Error') {
-        setError('Invalid expression')
-      } else {
-        setExpression(result)
-        setOutput(result)
-        setError('')
-      }
-      return
-    }
-
-    setExpression((prev) => prev + button)
-    setError('')
-  }
-
-  return (
-    <div className="app-content">
-      <h1>Simple Calculator</h1>
-      <p className="subtitle">Click buttons or build an expression</p>
-
-      <div className="calculator-card">
-        <div className="calculator-display">
-          <div className="calculator-expression">{expression || '0'}</div>
-          <div className="calculator-output">{error || output}</div>
-        </div>
-
-        <div className="calculator-grid">
-          {buttons.map((button) => (
-            <button
-              key={button}
-              className={`calc-button ${button === '=' ? 'equals' : ''} ${button === 'C' ? 'clear' : ''}`}
-              onClick={() => handleButtonClick(button)}
-              type="button"
-            >
-              {button}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
 }
 
 export default function App() {
   const [windows, setWindows] = useState([])
+  const [activeWindowId, setActiveWindowId] = useState(null)
   const topZ = useRef(10)
   const openCount = useRef(0)
 
-  const openWindow = useCallback(() => {
-    const id = ++idCounter
-    const index = openCount.current++
-    const position = getInitialPosition(index)
+  const openWindow = useCallback((appId) => {
+    const appDef = APPS.find(a => a.id === appId)
+    if (!appDef) return
+    const instanceId = ++idCounter
+    const position = getInitialPosition(openCount.current++, appDef.defaultSize)
     const zIndex = ++topZ.current
-    setWindows(prev => [...prev, { id, position, zIndex }])
+    setWindows(prev => [...prev, { instanceId, appId, position, zIndex }])
+    setActiveWindowId(instanceId)
   }, [])
 
-  const closeWindow = useCallback((id) => {
-    setWindows(prev => prev.filter(w => w.id !== id))
+  const closeWindow = useCallback((instanceId) => {
+    setWindows(prev => prev.filter(w => w.instanceId !== instanceId))
+    setActiveWindowId(curr => curr === instanceId ? null : curr)
   }, [])
 
-  const focusWindow = useCallback((id) => {
+  const focusWindow = useCallback((instanceId) => {
     const zIndex = ++topZ.current
-    setWindows(prev => prev.map(w => w.id === id ? { ...w, zIndex } : w))
+    setWindows(prev => prev.map(w => w.instanceId === instanceId ? { ...w, zIndex } : w))
+    setActiveWindowId(instanceId)
   }, [])
+
+  const activeWin = windows.find(w => w.instanceId === activeWindowId)
+  const activeAppDef = activeWin ? APPS.find(a => a.id === activeWin.appId) : null
+  const currentMenus = activeAppDef
+    ? activeAppDef.getMenus({
+        newInstance: () => openWindow(activeWin.appId),
+        closeWindow: () => closeWindow(activeWin.instanceId),
+      })
+    : DESKTOP_MENUS
 
   return (
     <div className="app-container">
-      <MenuBar title="My macOS App" />
-      <div className="desktop">
-        {windows.map(win => (
-          <MacWindow
-            key={win.id}
-            title="My macOS App"
-            initialPosition={win.position}
-            zIndex={win.zIndex}
-            onClose={() => closeWindow(win.id)}
-            onFocus={() => focusWindow(win.id)}
-          >
-            <AppContent />
-          </MacWindow>
-        ))}
+      <MenuBar appName={activeAppDef?.name ?? 'Desktop'} menus={currentMenus} />
+      <div className="desktop" onMouseDown={() => setActiveWindowId(null)}>
+        {windows.map(win => {
+          const appDef = APPS.find(a => a.id === win.appId)
+          if (!appDef) return null
+          const AppComponent = appDef.component
+          return (
+            <MacWindow
+              key={win.instanceId}
+              title={appDef.name}
+              initialPosition={win.position}
+              initialSize={appDef.defaultSize}
+              zIndex={win.zIndex}
+              onClose={() => closeWindow(win.instanceId)}
+              onFocus={() => focusWindow(win.instanceId)}
+            >
+              <AppComponent />
+            </MacWindow>
+          )
+        })}
 
-        <div className="desktop-icon" onDoubleClick={openWindow}>
-          <div className="desktop-icon-img">🖥️</div>
-          <span className="desktop-icon-label">My macOS App</span>
+        <div className="desktop-icons">
+          {APPS.map(app => (
+            <div
+              key={app.id}
+              className="desktop-icon"
+              onDoubleClick={(e) => { e.stopPropagation(); openWindow(app.id) }}
+              onMouseDown={e => e.stopPropagation()}
+            >
+              <div className="desktop-icon-img">{app.icon}</div>
+              <span className="desktop-icon-label">{app.name}</span>
+            </div>
+          ))}
         </div>
       </div>
+      <Taskbar
+        windows={windows}
+        activeId={activeWindowId}
+        onFocus={focusWindow}
+        appRegistry={APPS}
+      />
     </div>
   )
 }

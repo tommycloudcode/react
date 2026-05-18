@@ -1,0 +1,71 @@
+.taskbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  height: 44px;
+  background: rgba(20, 30, 48, 0.92);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.taskbar::-webkit-scrollbar {
+  height: 3px;
+}
+
+.taskbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.taskbar-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+  height: 32px;
+}
+
+.taskbar-item:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.taskbar-item.active {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  box-shadow: inset 0 -2px 0 #3b82f6;
+}
+
+.taskbar-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.taskbar-name {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.taskbar-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  padding: 0 8px;
+  user-select: none;
+}
